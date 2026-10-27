@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<section class="narrow"><span class="eyebrow">{{ code }}</span><h1>{{ 'Acesso não autorizado' if code==403 else 'Página não encontrada' if code==404 else 'Não foi possível concluir' }}</h1><p>{{ message }}</p><a class="button" href="/">Voltar ao início</a></section>{% endblock %}

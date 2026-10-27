@@ -1,0 +1,17 @@
+{% set slides = announcements or [
+ {'title':'Seu próximo passo começa aqui.','description':'Conheça os cursos e descubra novas possibilidades de aprendizado.','link':'/cursos'},
+ {'title':'Conhecimento para novos caminhos.','description':'Converse com a equipe sobre o curso de seu interesse.','link':'/interesse'},
+ {'title':'Seu aprendizado continua.','description':'Acesse seus cursos e materiais na área do aluno.','link':'/login'}
+] %}
+<section class="announcement-carousel" aria-label="Anúncios da SW Cursos" aria-roledescription="carrossel" data-carousel>
+ <div class="showcase-label"><span class="showcase-dot" aria-hidden="true"></span> EM DESTAQUE <span>SW CURSOS</span></div>
+ <div class="announcement-slides">
+ {% for ad in slides %}
+ <article class="announcement-slide {{ 'slide-with-image' if ad.filename else 'slide-institutional' }}" data-slide role="group" aria-roledescription="slide" aria-label="{{ loop.index }} de {{ slides|length }}" {% if not loop.first %}hidden{% endif %}>
+  {% if ad.filename %}<div class="announcement-visual"><img src="/anuncio/{{ ad.id }}/imagem" alt="{{ ad.title }}" width="900" height="1125" {% if not loop.first %}loading="lazy"{% endif %}></div>{% else %}<div class="announcement-visual"><img class="announcement-brand" src="/static/logo-sw-transparente.png" width="400" height="186" alt="SW Cursos"><span class="announcement-arrow" aria-hidden="true">↗</span></div>{% endif %}
+  <div class="announcement-copy"><h2>{{ ad.title }}</h2>{% if ad.description %}<p>{{ ad.description }}</p>{% endif %}{% if ad.link %}<a class="announcement-link" href="{{ ad.link }}">Saiba mais <span aria-hidden="true">↗</span></a>{% endif %}</div>
+ </article>
+ {% endfor %}
+ </div>
+ {% if slides|length > 1 %}<div class="carousel-controls"><div class="carousel-navigation"><button type="button" data-previous aria-label="Anúncio anterior">←</button><span data-slide-count aria-live="off">1 / {{ slides|length }}</span><button type="button" data-next aria-label="Próximo anúncio">→</button></div><button type="button" data-pause aria-pressed="false">Pausar rotação</button></div>{% endif %}
+</section>

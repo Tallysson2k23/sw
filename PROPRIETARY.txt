@@ -1,0 +1,10 @@
+Copyright (c) 2026 Pacovan Desenvolvimento. Todos os direitos reservados.
+
+O código-fonte desta aplicação é proprietário da Pacovan Desenvolvimento.
+A SW Cursos possui direito de uso para sua operação conforme contrato aplicável.
+Este arquivo não concede licença de código aberto, direito de distribuição,
+sublicenciamento ou transferência do código-fonte.
+
+Componentes de terceiros mantêm suas respectivas licenças, registradas
+em THIRD_PARTY_NOTICES.txt. Este aviso não restringe direitos concedidos
+pelas licenças desses componentes.

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "flask",
+  "headers": [
+    {"source": "/(.*)", "headers": [
+      {"key": "X-Content-Type-Options", "value": "nosniff"},
+      {"key": "X-Frame-Options", "value": "DENY"},
+      {"key": "Referrer-Policy", "value": "same-origin"}
+    ]},
+    {"source": "/sw.js", "headers": [
+      {"key": "Cache-Control", "value": "no-cache"},
+      {"key": "Service-Worker-Allowed", "value": "/"}
+    ]},
+    {"source": "/static/(.*)", "headers": [
+      {"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}
+    ]}
+  ]
+}
