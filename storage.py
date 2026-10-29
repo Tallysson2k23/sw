@@ -11,10 +11,16 @@ from werkzeug.utils import secure_filename
 
 class Storage:
     def __init__(self, config):
-        self.remote = config.get('STORAGE_BACKEND') == 's3'
+        self.firebase = config.get('STORAGE_BACKEND') == 'firebase'
+        self.remote = config.get('STORAGE_BACKEND') in ['s3','firebase']
         self.folder = Path(config['UPLOAD_FOLDER'])
         self.origin = None
         self.client = None
+        if self.firebase:
+            from firebase_backend import configured_clients
+            _, self.firebase_bucket = configured_clients(config)
+            self.origin = 'https://storage.googleapis.com'
+            return
         if not self.remote:
             self.folder.mkdir(parents=True, exist_ok=True)
             return
@@ -40,17 +46,33 @@ class Storage:
 
     def put(self, name, data, mime):
         name = self.key(name)
-        if self.remote:
+        if self.firebase:
+            blob = self.firebase_bucket.blob('sw-cursos/'+name)
+            blob.cache_control = 'private, no-store'
+            blob.upload_from_string(data, content_type=mime, timeout=20)
+        elif self.remote:
             self.client.put_object(Bucket=self.bucket, Key=name, Body=data, ContentType=mime, CacheControl='private, no-store')
         else: (self.folder/name).write_bytes(data)
 
     def delete(self, name):
         name = self.key(name)
-        if self.remote: self.client.delete_object(Bucket=self.bucket, Key=name)
+        if self.firebase:
+            from google.api_core.exceptions import NotFound
+            try: self.firebase_bucket.blob('sw-cursos/'+name).delete(timeout=20)
+            except NotFound: pass
+        elif self.remote: self.client.delete_object(Bucket=self.bucket, Key=name)
         else: (self.folder/name).unlink(missing_ok=True)
 
     def response(self, name, mime, download_name=None):
         name = self.key(name)
+        if self.firebase:
+            from datetime import timedelta
+            disposition = None
+            if download_name:
+                disposition = 'attachment; filename="'+(secure_filename(download_name) or 'material')+'"'
+            return redirect(self.firebase_bucket.blob('sw-cursos/'+name).generate_signed_url(
+                version='v4', expiration=timedelta(seconds=60), method='GET',
+                response_type=mime, response_disposition=disposition), code=302)
         if self.remote:
             params = {'Bucket': self.bucket, 'Key': name, 'ResponseContentType': mime,
                       'ResponseCacheControl': 'private, no-store'}

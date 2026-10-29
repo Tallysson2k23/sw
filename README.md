@@ -1,5 +1,7 @@
 # SW Cursos
 
+**Firebase na Vercel:** o sistema também suporta Cloud Firestore e Firebase Storage, sem PostgreSQL/S3. Consulte [docs/FIREBASE.md](docs/FIREBASE.md) para configurar o projeto existente e publicar. O código precisa ser atualizado no GitHub e as variáveis privadas configuradas na Vercel antes do redeploy.
+
 **Publicação na Vercel:** veja o passo a passo em [docs/VERCEL.md](docs/VERCEL.md). O projeto agora suporta PostgreSQL e armazenamento S3 privado, mantendo SQLite/arquivos locais para desenvolvimento. Na Vercel, uploads têm limite de 4 MB; localmente, 10 MB.
 
 Aplicação web proprietária da **Pacovan Desenvolvimento**, com direito de uso pela **SW Cursos**. Nenhuma licença de código aberto é concedida ao código deste projeto. As licenças de terceiros permanecem aplicáveis às respectivas dependências.

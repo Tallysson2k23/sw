@@ -24,27 +24,40 @@ def create_app(test_config=None):
                 os.environ.setdefault(k.strip(), v.strip())
     app = Flask(__name__)
     app.config.update(SECRET_KEY=os.environ.get('SECRET_KEY'), DATABASE=os.environ.get('DATABASE', str(ROOT/'instance/sw.sqlite3')), UPLOAD_FOLDER=str(ROOT/'instance/uploads'), MAX_CONTENT_LENGTH=10*1024*1024, SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax', SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE') == '1', PERMANENT_SESSION_LIFETIME=timedelta(hours=8))
-    app.config.update(DATABASE_URL=os.environ.get('DATABASE_URL',''), STORAGE_BACKEND=os.environ.get('STORAGE_BACKEND','local'), SERVERLESS=os.environ.get('VERCEL')=='1')
+    app.config.update(DATABASE_URL=os.environ.get('DATABASE_URL',''), DATABASE_BACKEND=os.environ.get('DATABASE_BACKEND','sql'), STORAGE_BACKEND=os.environ.get('STORAGE_BACKEND','local'), SERVERLESS=os.environ.get('VERCEL')=='1')
+    for key in ['FIREBASE_PROJECT_ID','FIREBASE_CREDENTIALS_JSON','FIREBASE_CREDENTIALS_BASE64','FIREBASE_STORAGE_BUCKET']:
+        app.config[key]=os.environ.get(key,'')
     for key in ['S3_ENDPOINT_URL','S3_BUCKET','S3_ACCESS_KEY_ID','S3_SECRET_ACCESS_KEY','S3_REGION']:
         app.config[key]=os.environ.get(key, 'auto' if key=='S3_REGION' else '')
     if test_config: app.config.update(test_config)
     if app.config['SERVERLESS']:
-        if not app.config['DATABASE_URL'] or app.config['STORAGE_BACKEND']!='s3':
-            raise RuntimeError('Na Vercel configure DATABASE_URL PostgreSQL e STORAGE_BACKEND=s3; armazenamento local não é persistente.')
+        if not ((app.config['DATABASE_BACKEND']=='firestore' and app.config['STORAGE_BACKEND']=='firebase') or (app.config['DATABASE_BACKEND']=='sql' and app.config['DATABASE_URL'] and app.config['STORAGE_BACKEND']=='s3')):
+            raise RuntimeError('Na Vercel configure Firebase (DATABASE_BACKEND=firestore e STORAGE_BACKEND=firebase) ou DATABASE_URL PostgreSQL e STORAGE_BACKEND=s3; armazenamento local não é persistente.')
         app.config.update(SESSION_COOKIE_SECURE=True, MAX_CONTENT_LENGTH=4*1024*1024)
+    if app.config['DATABASE_BACKEND'] not in ['sql','firestore']:
+        raise RuntimeError('DATABASE_BACKEND deve ser sql ou firestore.')
+    if app.config['DATABASE_BACKEND']=='firestore':
+        if app.config['DATABASE_URL']:
+            raise RuntimeError('Remova DATABASE_URL ao usar Firestore para evitar selecionar o banco errado.')
+        if any(not app.config[key] for key in ['FIREBASE_PROJECT_ID','FIREBASE_STORAGE_BUCKET']) or not (app.config['FIREBASE_CREDENTIALS_JSON'] or app.config['FIREBASE_CREDENTIALS_BASE64']):
+            raise RuntimeError('Configure FIREBASE_PROJECT_ID, FIREBASE_CREDENTIALS_JSON e FIREBASE_STORAGE_BUCKET na Vercel.')
     if app.config['DATABASE_URL'] and not app.config['DATABASE_URL'].startswith(('postgres://','postgresql://')):
         raise RuntimeError('DATABASE_URL deve ser uma conexão PostgreSQL.')
-    if app.config['STORAGE_BACKEND'] not in ['local','s3']:
-        raise RuntimeError('STORAGE_BACKEND deve ser local ou s3.')
+    if app.config['STORAGE_BACKEND'] not in ['local','s3','firebase']:
+        raise RuntimeError('STORAGE_BACKEND deve ser local, s3 ou firebase.')
     if not app.config['SECRET_KEY'] or len(app.config['SECRET_KEY']) < 32 or app.config['SECRET_KEY']=='gere-uma-chave-aleatoria-com-pelo-menos-32-caracteres':
         raise RuntimeError('Configure SECRET_KEY com pelo menos 32 caracteres no .env antes de iniciar.')
-    if not app.config['DATABASE_URL']: Path(app.config['DATABASE']).parent.mkdir(parents=True, exist_ok=True)
+    if app.config['DATABASE_BACKEND']=='sql' and not app.config['DATABASE_URL']: Path(app.config['DATABASE']).parent.mkdir(parents=True, exist_ok=True)
     files=Storage(app.config)
     app.extensions['storage']=files
 
     def db():
         if 'db' not in g:
-            g.db = Database(app.config)
+            if app.config['DATABASE_BACKEND']=='firestore':
+                from firestore_database import FirestoreDatabase
+                g.db = FirestoreDatabase(app.config)
+            else:
+                g.db = Database(app.config)
         return g.db
 
     def rows(sql, args=()): return db().execute(sql,args).fetchall()

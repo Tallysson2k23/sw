@@ -1,5 +1,7 @@
 # Publicar a SW Cursos na Vercel pelo GitHub
 
+**Prefere Firebase?** Siga [FIREBASE.md](FIREBASE.md). Essa alternativa usa Firestore e Firebase Storage e dispensa PostgreSQL/S3. As instruções restantes desta página são para a opção PostgreSQL/S3.
+
 O código foi adaptado para Vercel com **PostgreSQL** e **bucket privado compatível com S3**. Firebase não é obrigatório. A versão local continua funcionando com SQLite e arquivos em `instance/uploads`.
 
 Esta entrega prepara o código; **não cria contas, contrata serviços, envia dados nem publica automaticamente**.
